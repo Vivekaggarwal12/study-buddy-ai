@@ -1,14 +1,42 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { Heart, LayoutDashboard, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import HeroInput from "@/components/HeroInput";
 import StudyResults, { StudyMaterials } from "@/components/StudyResults";
 import LoadingState from "@/components/LoadingState";
 
 const Index = () => {
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [studyData, setStudyData] = useState<StudyMaterials | null>(null);
   const [currentTopic, setCurrentTopic] = useState("");
+  const [isFavorited, setIsFavorited] = useState(false);
+
+  // Auto-generate if topic param exists
+  useEffect(() => {
+    const topicParam = searchParams.get("topic");
+    if (topicParam && !studyData && !isLoading) {
+      handleGenerate(topicParam);
+      setSearchParams({});
+    }
+  }, [searchParams]);
+
+  // Check if current topic is favorited
+  useEffect(() => {
+    if (!currentTopic || !user) return;
+    supabase
+      .from("favorite_topics")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("topic", currentTopic)
+      .maybeSingle()
+      .then(({ data }) => setIsFavorited(!!data));
+  }, [currentTopic, user]);
 
   const handleGenerate = async (topic: string) => {
     setIsLoading(true);
@@ -21,7 +49,6 @@ const Index = () => {
       });
 
       if (error) {
-        // Check for rate limiting or payment errors
         if (error.message?.includes("429")) {
           toast.error("Too many requests. Please wait a moment and try again.");
         } else if (error.message?.includes("402")) {
@@ -38,11 +65,41 @@ const Index = () => {
       }
 
       setStudyData(data);
+
+      // Save to study history
+      if (user) {
+        await supabase.from("study_history").insert({
+          user_id: user.id,
+          topic,
+          study_data: data,
+        });
+      }
     } catch (err) {
       console.error("Error:", err);
       toast.error("Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const toggleFavorite = async () => {
+    if (!user || !currentTopic) return;
+
+    if (isFavorited) {
+      await supabase
+        .from("favorite_topics")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("topic", currentTopic);
+      setIsFavorited(false);
+      toast.success("Removed from favorites");
+    } else {
+      await supabase.from("favorite_topics").insert({
+        user_id: user.id,
+        topic: currentTopic,
+      });
+      setIsFavorited(true);
+      toast.success("Added to favorites!");
     }
   };
 
@@ -57,17 +114,42 @@ const Index = () => {
             </div>
             <span className="font-display font-semibold text-foreground">StudyBuddy</span>
           </div>
-          {currentTopic && studyData && (
+          <div className="flex items-center gap-3">
+            {currentTopic && studyData && (
+              <>
+                <button
+                  onClick={toggleFavorite}
+                  className="text-muted-foreground hover:text-destructive transition-colors"
+                  title={isFavorited ? "Remove from favorites" : "Add to favorites"}
+                >
+                  <Heart className={`h-4 w-4 ${isFavorited ? "fill-destructive text-destructive" : ""}`} />
+                </button>
+                <button
+                  onClick={() => {
+                    setStudyData(null);
+                    setCurrentTopic("");
+                  }}
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  New Topic
+                </button>
+              </>
+            )}
             <button
-              onClick={() => {
-                setStudyData(null);
-                setCurrentTopic("");
-              }}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              onClick={() => navigate("/dashboard")}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+              title="Dashboard"
             >
-              New Topic
+              <LayoutDashboard className="h-4 w-4" />
             </button>
-          )}
+            <button
+              onClick={signOut}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+              title="Sign out"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       </header>
 

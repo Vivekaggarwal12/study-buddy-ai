@@ -2,6 +2,9 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2, XCircle, HelpCircle, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 interface QuizQuestion {
   question: string;
@@ -12,9 +15,11 @@ interface QuizQuestion {
 
 interface QuizViewProps {
   questions: QuizQuestion[];
+  topic?: string;
 }
 
-const QuizView = ({ questions }: QuizViewProps) => {
+const QuizView = ({ questions, topic }: QuizViewProps) => {
+  const { user } = useAuth();
   const [currentQ, setCurrentQ] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [score, setScore] = useState(0);
@@ -36,12 +41,23 @@ const QuizView = ({ questions }: QuizViewProps) => {
     }
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentQ < questions.length - 1) {
       setCurrentQ((q) => q + 1);
       setSelectedAnswer(null);
     } else {
       setShowResults(true);
+      // Save quiz score
+      if (user && topic) {
+        const finalScore = score + (selectedAnswer === questions[currentQ].correctIndex && !answered[currentQ] ? 1 : 0);
+        await supabase.from("quiz_scores").insert({
+          user_id: user.id,
+          topic,
+          score: finalScore,
+          total_questions: questions.length,
+        });
+        toast.success("Quiz score saved!");
+      }
     }
   };
 
