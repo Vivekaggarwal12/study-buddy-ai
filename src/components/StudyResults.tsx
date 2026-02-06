@@ -81,7 +81,7 @@ const StudyResults = ({ data, topic }: StudyResultsProps) => {
             <FlashcardsView flashcards={data.flashcards} />
           </TabsContent>
           <TabsContent value="quiz">
-            <QuizView questions={data.quiz} />
+            <QuizView questions={data.quiz} topic={topic} />
           </TabsContent>
           <TabsContent value="tips">
             <StudyTipsView tips={data.studyTips} />
