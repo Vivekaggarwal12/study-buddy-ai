@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Heart, LayoutDashboard, LogOut } from "lucide-react";
+import { Heart, LayoutDashboard, LogOut, CalendarDays, StickyNote } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import HeroInput from "@/components/HeroInput";
@@ -135,6 +135,20 @@ const Index = () => {
                 </button>
               </>
             )}
+            <button
+              onClick={() => navigate("/planner")}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+              title="Study Planner"
+            >
+              <CalendarDays className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => navigate("/notes")}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+              title="Study Notes"
+            >
+              <StickyNote className="h-4 w-4" />
+            </button>
             <button
               onClick={() => navigate("/dashboard")}
               className="text-muted-foreground hover:text-foreground transition-colors"

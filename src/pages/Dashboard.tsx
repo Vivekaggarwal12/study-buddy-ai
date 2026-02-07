@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { BookOpen, Trophy, Heart, Clock, ArrowRight, Trash2 } from "lucide-react";
+import { BookOpen, Trophy, Heart, Clock, ArrowRight, Trash2, CalendarDays, StickyNote } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -101,6 +101,24 @@ const Dashboard = () => {
             Welcome back, {displayName}!
           </h1>
           <p className="text-muted-foreground">Here's your study progress overview.</p>
+          <div className="flex gap-2 mt-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/planner")}
+              className="gap-1.5"
+            >
+              <CalendarDays className="h-3.5 w-3.5" /> Study Planner
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/notes")}
+              className="gap-1.5"
+            >
+              <StickyNote className="h-3.5 w-3.5" /> Study Notes
+            </Button>
+          </div>
         </motion.div>
 
         {/* Stats cards */}
