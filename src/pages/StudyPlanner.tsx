@@ -8,6 +8,7 @@ import {
   Trash2,
   Clock,
   Edit2,
+  Sparkles,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -15,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import AddPlanDialog from "@/components/planner/AddPlanDialog";
 import WeeklyTimetable from "@/components/planner/WeeklyTimetable";
+import AIScheduleDialog from "@/components/planner/AIScheduleDialog";
 
 export interface StudyPlan {
   id: string;
@@ -35,6 +37,7 @@ const StudyPlanner = () => {
   const [plans, setPlans] = useState<StudyPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [aiDialogOpen, setAiDialogOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<StudyPlan | null>(null);
 
   useEffect(() => {
@@ -58,6 +61,21 @@ const StudyPlanner = () => {
     if (!error) {
       setPlans((p) => p.filter((plan) => plan.id !== id));
       toast.success("Session removed");
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    if (!user) return;
+    
+    const confirmed = window.confirm("Are you sure you want to delete all study sessions? This cannot be undone.");
+    if (!confirmed) return;
+
+    const { error } = await supabase.from("study_plans").delete().eq("user_id", user.id);
+    if (!error) {
+      setPlans([]);
+      toast.success("All sessions removed");
+    } else {
+      toast.error("Failed to remove sessions");
     }
   };
 
@@ -101,16 +119,36 @@ const StudyPlanner = () => {
               </span>
             </div>
           </div>
-          <Button
-            onClick={() => {
-              setEditingPlan(null);
-              setDialogOpen(true);
-            }}
-            size="sm"
-            className="bg-gradient-hero text-primary-foreground hover:opacity-90 gap-1.5"
-          >
-            <Plus className="h-3.5 w-3.5" /> Add Session
-          </Button>
+          <div className="flex items-center gap-2">
+            {plans.length > 0 && (
+              <Button
+                onClick={handleDeleteAll}
+                size="sm"
+                variant="outline"
+                className="gap-1.5 border-destructive/30 text-destructive hover:bg-destructive/10"
+              >
+                <Trash2 className="h-3.5 w-3.5" /> Clear All
+              </Button>
+            )}
+            <Button
+              onClick={() => setAiDialogOpen(true)}
+              size="sm"
+              variant="outline"
+              className="gap-1.5 border-primary/30 hover:bg-primary/5"
+            >
+              <Sparkles className="h-3.5 w-3.5 text-primary" /> AI Schedule
+            </Button>
+            <Button
+              onClick={() => {
+                setEditingPlan(null);
+                setDialogOpen(true);
+              }}
+              size="sm"
+              className="bg-gradient-hero text-primary-foreground hover:opacity-90 gap-1.5"
+            >
+              <Plus className="h-3.5 w-3.5" /> Add Session
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -165,6 +203,12 @@ const StudyPlanner = () => {
         }}
         editingPlan={editingPlan}
         onSaved={handleSaved}
+      />
+
+      <AIScheduleDialog
+        open={aiDialogOpen}
+        onOpenChange={setAiDialogOpen}
+        onScheduleGenerated={fetchPlans}
       />
     </div>
   );

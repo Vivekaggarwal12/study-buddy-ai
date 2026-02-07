@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { topic } = await req.json();
+    const { topic, requestId } = await req.json();
 
     if (!topic || typeof topic !== "string" || topic.trim().length === 0) {
       return new Response(
@@ -57,6 +57,7 @@ Rules:
 - Generate 4-5 study tips
 - Keep language simple and accessible
 - Make quiz options plausible but with one clearly correct answer
+- IMPORTANT: Create DIFFERENT questions each time, focusing on various aspects of the topic
 - Return ONLY the JSON object, no other text`;
 
     const response = await fetch(
@@ -71,9 +72,9 @@ Rules:
           model: "google/gemini-3-flash-preview",
           messages: [
             { role: "system", content: systemPrompt },
-            { role: "user", content: `Create comprehensive study materials for the topic: "${sanitizedTopic}"` },
+            { role: "user", content: `Create comprehensive study materials for the topic: "${sanitizedTopic}"${requestId ? ` (Request ID: ${requestId} - generate unique variations)` : ''}` },
           ],
-          temperature: 0.7,
+          temperature: requestId ? 1.0 : 0.7,
         }),
       }
     );

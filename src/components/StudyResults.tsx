@@ -68,6 +68,8 @@ const StudyResults = ({ data, topic }: StudyResultsProps) => {
   const { user } = useAuth();
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [quizQuestions, setQuizQuestions] = useState(data.quiz);
+  const [loadingNewQuiz, setLoadingNewQuiz] = useState(false);
 
   const handleAutoSaveNotes = async () => {
     if (!user) {
@@ -93,6 +95,35 @@ const StudyResults = ({ data, topic }: StudyResultsProps) => {
       toast.error("Failed to save notes. Please try again.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleRequestNewQuiz = async () => {
+    setLoadingNewQuiz(true);
+    try {
+      const timestamp = Date.now();
+      const { data: newData, error } = await supabase.functions.invoke("generate-study", {
+        body: { topic, requestId: timestamp },
+      });
+
+      if (error) {
+        console.error("Quiz generation error:", error);
+        toast.error("Failed to generate new quiz questions");
+        setLoadingNewQuiz(false);
+        return;
+      }
+
+      if (newData?.quiz) {
+        setQuizQuestions(newData.quiz);
+        toast.success("New quiz questions generated!");
+      } else {
+        toast.error("No quiz data received");
+      }
+    } catch (err) {
+      console.error("Error generating new quiz:", err);
+      toast.error("Failed to generate new quiz. Please try again.");
+    } finally {
+      setLoadingNewQuiz(false);
     }
   };
 
@@ -173,7 +204,13 @@ const StudyResults = ({ data, topic }: StudyResultsProps) => {
             <FlashcardsView flashcards={data.flashcards} />
           </TabsContent>
           <TabsContent value="quiz">
-            <QuizView questions={data.quiz} topic={topic} />
+            {loadingNewQuiz ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : (
+              <QuizView questions={quizQuestions} topic={topic} onRequestNewQuestions={handleRequestNewQuiz} />
+            )}
           </TabsContent>
           <TabsContent value="tips">
             <StudyTipsView tips={data.studyTips} />

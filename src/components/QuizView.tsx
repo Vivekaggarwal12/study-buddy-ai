@@ -16,9 +16,10 @@ interface QuizQuestion {
 interface QuizViewProps {
   questions: QuizQuestion[];
   topic?: string;
+  onRequestNewQuestions?: () => void;
 }
 
-const QuizView = ({ questions, topic }: QuizViewProps) => {
+const QuizView = ({ questions, topic, onRequestNewQuestions }: QuizViewProps) => {
   const { user } = useAuth();
   const [currentQ, setCurrentQ] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
@@ -62,11 +63,15 @@ const QuizView = ({ questions, topic }: QuizViewProps) => {
   };
 
   const handleRestart = () => {
-    setCurrentQ(0);
-    setSelectedAnswer(null);
-    setScore(0);
-    setAnswered(new Array(questions.length).fill(false));
-    setShowResults(false);
+    if (onRequestNewQuestions) {
+      onRequestNewQuestions();
+    } else {
+      setCurrentQ(0);
+      setSelectedAnswer(null);
+      setScore(0);
+      setAnswered(new Array(questions.length).fill(false));
+      setShowResults(false);
+    }
   };
 
   if (showResults) {
