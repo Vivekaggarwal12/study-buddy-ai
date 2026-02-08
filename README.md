@@ -1,4 +1,9 @@
 # Welcome to your Lovable project
+ our deployed link 
+https://study-buddy-git-main-agrawalers-projects.vercel.app/auth
+
+use user id password johanshadowing@gmail.com 
+ password. 123456
 
 ## Project info
 
